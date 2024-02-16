@@ -1,113 +1,85 @@
-import Image from "next/image";
+'use client'
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import Todo from "@/components/Todo";
+import { useRouter } from "next/navigation";
+
+const LoadingAnimation = () => {
+  return <span className="loading-dots p-10 text-2xl text-white mt-2">
+      Loading
+      <span>.</span>
+      <span>.</span>
+      <span>.</span>
+    </span>;
+};
 
 export default function Home() {
+  const [todos, setTodos] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(true)
+
+  const router = useRouter()
+
+  const onChecked = async (id, isCompleted) => {
+    setTodos((prevTodos) =>
+    prevTodos.map((todo) =>
+      todo._id === id ? { ...todo, completed: !isCompleted } : todo
+    ))
+
+    const res = await fetch(`/api/checked/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({id, isCompleted})
+    })
+  }
+
+  const handleDelete = async (id) => {
+    const res = await fetch(`/api/checked/${id}`, {
+      method:'DELETE',
+      body: JSON.stringify({id})
+    })
+    if (res.ok) {
+      const filteredTodos = todos.filter(todo => todo._id !== id)
+      setTodos(filteredTodos)
+    }
+  }
+
+  const handleEdit = async (id) => {
+    router.push(`edit/${id}`)
+  }
+
+
+  const TodoList = todos.map(todo => <Todo key={todo._id} todo={todo.todo} completed={todo.completed} handleChecked={() => onChecked(todo._id, todo.completed)} handleDelete={() => handleDelete(todo._id)} handleEdit={() => handleEdit(todo._id)}/>)
+
+  useEffect(() => {
+    const getTodos = async () => {
+      const res = await fetch('/api/get-todo')
+      const data = await res.json()
+      if (!res.ok) {
+        console.log(res.status)
+      }
+      setTodos(data)
+      setIsLoading(false)
+    }
+    getTodos();
+  }, [])
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <main>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+      <header className="flex justify-between items-center p-10 text-white">
+        <h1 className="text-4xl">TODO</h1>
+        <Link className='text-3xl border py-1 px-3 hover:bg-white hover:bg-opacity-25 rounded-md' href='new-todo'>New</Link>
+      </header>
 
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+      {TodoList.length !== 0 ? todos.filter(todo => !todo.completed).length === 0 ? <h1 className="text-2xl text-green-400 px-10 underline">All done!</h1> : <section>
+        <h1 className="text-2xl text-white px-10 underline">Pending Todos: <span className="text-red-400">{todos.filter(todo => !todo.completed).length}</span></h1>
+      </section> : ''}
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+      {isLoading ? <LoadingAnimation /> : TodoList.length === 0 ? <h1 className="text-2xl text-white px-10">No todos yet... ¯\_(ツ)_/¯</h1> :
+      <section className="p-10">
+        {TodoList}
+      </section>}
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
     </main>
   );
 }
