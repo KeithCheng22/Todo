@@ -28,14 +28,16 @@ export default function Home() {
 
     const res = await fetch(`/api/checked/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({id, isCompleted})
+      body: JSON.stringify({id, isCompleted}),
+      cache: 'no-store'
     })
   }
 
   const handleDelete = async (id) => {
     const res = await fetch(`/api/checked/${id}`, {
       method:'DELETE',
-      body: JSON.stringify({id})
+      body: JSON.stringify({id}),
+      cache: 'no-store'
     })
     if (res.ok) {
       const filteredTodos = todos.filter(todo => todo._id !== id)

@@ -26,7 +26,8 @@ function handleChange(e) {
 
     const res = await fetch('/api/add-todo', {
       method: 'POST',
-      body: JSON.stringify({todo: formData.todo})
+      body: JSON.stringify({todo: formData.todo}),
+      cache: 'no-store'
     })
     if (!res.ok) {
       setError(true)
