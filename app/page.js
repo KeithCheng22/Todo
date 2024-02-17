@@ -52,7 +52,7 @@ export default function Home() {
 
   useEffect(() => {
     const getTodos = async () => {
-      const res = await fetch('/api/get-todo')
+      const res = await fetch('/api/get-todo', {cache: 'no-store'})
       const data = await res.json()
       if (!res.ok) {
         console.log(res.status)
